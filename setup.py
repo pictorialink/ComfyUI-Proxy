@@ -87,18 +87,24 @@ def stop_proxy():
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    print("----------",script_dir)
     token_management_path = os.path.join(script_dir, 'token_management.py')
     requirements_path = os.path.join(script_dir, 'requirements.txt')
     proxy_path = os.path.join(script_dir, 'proxy.py')
     proxy_log_path = os.path.join(script_dir, 'proxy.log')
-
+    env_file_path = os.path.join(script_dir, '.env')
+    print(token_management_path)
+    print(requirements_path)
+    print(proxy_path)
+    print(env_file_path)
+    print(proxy_log_path)
 
     if args.command == 'stop':
         stop_proxy()
     elif args.command == 'setup':
         add_aliases()
 
-        env_file_path = '.env'
         try:
             with open(env_file_path, 'w') as f:
                 f.write(env_content.strip())
