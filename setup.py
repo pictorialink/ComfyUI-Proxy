@@ -57,6 +57,7 @@ def add_aliases(token_management_path):
                 with open(rc_file, 'a') as f:
                     for alias in new_aliases:
                         f.write(f"\n{alias}\n")
+                subprocess.run(['source', rc_file], check=True)
                 print(f"新别名已添加到 {rc_file}，请重新启动终端或运行 'source {rc_file}' 使别名生效。")
             except Exception as e:
                 print(f"添加别名失败。错误信息: {e}")
