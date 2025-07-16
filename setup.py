@@ -2,12 +2,16 @@ import os
 import subprocess
 import sys
 import argparse
+import psutil  # 用于查找和终止进程
+
 
 
 python_path = sys.executable
 parser = argparse.ArgumentParser(description='设置 ComfyUI 地址和端口')
 parser.add_argument('--comfyui-address', default='127.0.0.1:8000', help='ComfyUI 的地址和端口，默认为 127.0.0.1:8000')
 parser.add_argument('--port', type=int, default=8129, help='代理服务端口，默认为 8129')
+parser.add_argument('command', choices=['setup', 'stop'], default='setup', nargs='?', help='执行命令，setup 进行安装和启动，stop 停止代理服务')
+
 
 args = parser.parse_args()
 comfyui_address = args.comfyui_address
@@ -61,37 +65,64 @@ def add_aliases():
     except Exception as e:
         print(f"添加别名失败。错误信息: {e}")
 
-add_aliases()
+
+def stop_proxy():
+    """停止正在运行的 proxy.py 进程"""
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            cmdline = proc.info['cmdline']
+            if cmdline and 'proxy.py' in cmdline[-1]:
+                proc.terminate()  # 尝试终止进程
+                gone, still_alive = psutil.wait_procs([proc], timeout=5)
+                if still_alive:
+                    for p in still_alive:
+                        p.kill()  # 强制终止进程
+                    print("已强制终止代理服务进程。")
+                else:
+                    print("代理服务进程已成功终止。")
+                return
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    print("未找到正在运行的代理服务进程。")
+
+if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    token_management_path = os.path.join(script_dir, 'token_management.py')
+    requirements_path = os.path.join(script_dir, 'requirements.txt')
+    proxy_path = os.path.join(script_dir, 'proxy.py')
+    proxy_log_path = os.path.join(script_dir, 'proxy.log')
 
 
-env_file_path = '.env'
-try:
-    with open(env_file_path, 'w') as f:
-        f.write(env_content.strip())
-    print(f".env 文件已成功创建。")
-except Exception as e:
-    print(f".env 文件创建失败，请检查权限或路径。错误信息: {e}")
-    exit(1)
+    if args.command == 'stop':
+        stop_proxy()
+    elif args.command == 'setup':
+        add_aliases()
+
+        env_file_path = '.env'
+        try:
+            with open(env_file_path, 'w') as f:
+                f.write(env_content.strip())
+            print(f".env 文件已成功创建。")
+        except Exception as e:
+            print(f".env 文件创建失败，请检查权限或路径。错误信息: {e}")
+            exit(1)
 
 
-if not os.path.exists('config_token.json'):
-    subprocess.run([python_path, 'token_management.py', 'add', 'system'], check=True)
+        if not os.path.exists('config_token.json'):
+            subprocess.run([python_path, token_management_path, 'add', 'system'], check=True)
 
+        try:
+            subprocess.run([python_path, '-m', 'pip', 'install', '-r', requirements_path], check=True)
+            print("依赖安装成功。")
 
-try:
-    subprocess.run([python_path, '-m', 'pip', 'install', '-r', 'requirements.txt'], check=True)
-    print("依赖安装成功。")
+        except subprocess.CalledProcessError as e:
+            print(f"依赖安装失败。错误信息: {e}")
+            exit(1)
 
-except subprocess.CalledProcessError as e:
-    print(f"依赖安装失败。错误信息: {e}")
-    exit(1)
-
-try:
-    #检查端口是否被占用，如果是当前服务，则重新启动
-    with open('proxy.log', 'a') as log_file:
-        # subprocess.Popen(['nohup', sys.executable, 'proxy.py', '&'], stdout=log_file, stderr=subprocess.STDOUT, shell=False, preexec_fn=os.setpgrp)
-        subprocess.Popen([python_path, 'proxy.py'], stdout=log_file, stderr=subprocess.STDOUT)
-    print("代理服务已启动，日志记录在 proxy.log 文件中。")
-except Exception as e:
-    print(f"代理服务启动失败。错误信息: {e}")
-    exit(1)
+        try:
+            with open(proxy_log_path, 'a') as log_file:
+                subprocess.Popen([python_path, proxy_path], stdout=log_file, stderr=subprocess.STDOUT)
+            print("代理服务已启动，日志记录在 proxy.log 文件中。")
+        except Exception as e:
+            print(f"代理服务启动失败。错误信息: {e}")
+            exit(1)
