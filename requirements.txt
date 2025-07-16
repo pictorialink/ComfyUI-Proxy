@@ -1,0 +1,6 @@
+fastapi
+python-jose
+httpx
+uvicorn
+python-dotenv
+websockets
