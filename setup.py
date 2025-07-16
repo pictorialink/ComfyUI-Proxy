@@ -26,7 +26,7 @@ ALGORITHM="RS256"
 PORT={port}
 '''
 
-def add_aliases():
+def add_aliases(token_management_path):
     home_dir = os.path.expanduser("~")
     shell = os.environ.get("SHELL", "")
     if "zsh" in shell:
@@ -38,7 +38,7 @@ def add_aliases():
         return
 
     alias_commands = [
-        f"alias whale='{python_path} ./token_management.py'"
+        f"alias whale='{python_path} {token_management_path}'"
     ]
 
     try:
@@ -87,23 +87,24 @@ def stop_proxy():
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
-
-    print("----------",script_dir)
     token_management_path = os.path.join(script_dir, 'token_management.py')
     requirements_path = os.path.join(script_dir, 'requirements.txt')
     proxy_path = os.path.join(script_dir, 'proxy.py')
     proxy_log_path = os.path.join(script_dir, 'proxy.log')
     env_file_path = os.path.join(script_dir, '.env')
+    config_token_json_path = os.path.join(script_dir, 'config_token.json')
+
     print(token_management_path)
     print(requirements_path)
     print(proxy_path)
     print(env_file_path)
     print(proxy_log_path)
+    print(config_token_json_path)
 
     if args.command == 'stop':
         stop_proxy()
     elif args.command == 'setup':
-        add_aliases()
+        add_aliases(token_management_path)
 
         try:
             with open(env_file_path, 'w') as f:
@@ -114,7 +115,7 @@ if __name__ == "__main__":
             exit(1)
 
 
-        if not os.path.exists('config_token.json'):
+        if not os.path.exists(config_token_json_path):
             subprocess.run([python_path, token_management_path, 'add', 'system'], check=True)
 
         try:
