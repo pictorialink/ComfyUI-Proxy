@@ -45,8 +45,8 @@ python token_management.py del <name>
 使用 setup.py 脚本可以完成项目的初始化工作，包括创建 .env 文件、设置命令别名、安装依赖、启动代理服务等操作。
 
 命令参数
---comfyui-address：ComfyUI 的地址和端口，默认为 127.0.0.1:8188。
---port：代理服务端口，默认为 6006。
+--comfyui-address：ComfyUI 的地址和端口，默认为 127.0.0.1:8000。
+--port：代理服务端口，默认为 8129。
 
 ```bash
 # 使用默认配置初始化项目
