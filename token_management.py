@@ -48,6 +48,12 @@ def create_token(name):
     token = generate_token()
     with open(CONFIG_FILE, 'r') as f:
         data = json.load(f)
+
+    for item in data:
+        if item["name"] == name:
+            print(f"名称 {name} 已经存在，请选择其他名称。")
+            return
+
     new_entry = {
         "name": name,
         "token": token

@@ -67,6 +67,7 @@ async def conditional_verify_token(request: Request,credentials: HTTPAuthorizati
     if request.method == "GET" and request.url.path == "/view":
         return
     
+    return True
     # 限制访问
     raise HTTPException(status_code=401, detail=f"Token 无权限访问: {request.method} {request.url.path}")
 
