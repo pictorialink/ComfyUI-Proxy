@@ -36,12 +36,14 @@ http_client = AsyncClient(base_url=COMFYUI_URL)
 
 async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """验证 JWT Token"""
-    token = credentials.credentials
-    logging.info(f"Received Token: {token}")
-    token = token.strip()   
-    token = token.replace("Bearer ", "").strip()
-
+    if credentials is None:
+        logging.error("Token 未提供")
+        raise HTTPException(status_code=401, detail="Token 未提供")
     try:
+        token = credentials.credentials
+        logging.info(f"Received Token: {token}")
+        token = token.strip()   
+        token = token.replace("Bearer ", "").strip()
         with open("config_token.json", "r") as f:
             config = json.load(f)
         if token in [item["token"] for item in config]:
@@ -61,7 +63,12 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
     
 async def conditional_verify_token(request: Request,credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))):
     """根据请求条件决定是否验证 Token"""
+    logging.info(f"处理请求: {request.method} {request.url.path}")
+    
     if request.method == "POST" and request.url.path == "/prompt":
+        return await verify_token(credentials)
+    
+    if request.method == "POST" and request.url.path == "/api/prompt":
         return await verify_token(credentials)
     
     if request.method == "GET" and request.url.path == "/view":
