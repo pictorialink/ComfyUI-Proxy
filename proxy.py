@@ -44,7 +44,9 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
         logging.info(f"Received Token: {token}")
         token = token.strip()   
         token = token.replace("Bearer ", "").strip()
-        with open("config_token.json", "r") as f:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        config_token_json_path = os.path.join(script_dir, 'config_token.json')
+        with open(config_token_json_path, "r") as f:
             config = json.load(f)
         if token in [item["token"] for item in config]:
             return True
